@@ -64,5 +64,4 @@ android {
 dependencies {
     testImplementation "org.jetbrains.kotlin:kotlin-test"
     implementation "com.indooratlas.android:indooratlas-android-sdk:3.7.1@aar"
-    implementation "com.indooratlas.android:indooratlas-android-resources:3.7.1@aar"
 }
