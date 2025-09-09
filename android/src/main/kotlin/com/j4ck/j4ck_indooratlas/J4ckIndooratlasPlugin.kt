@@ -1,6 +1,7 @@
 package com.j4ck.j4ck_indooratlas
 
 import android.content.Context
+import android.graphics.PointF
 import android.os.Bundle
 import android.os.Looper
 import com.indooratlas.android.sdk.IALocation
@@ -32,7 +33,7 @@ class J4ckIndooratlasPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     private lateinit var wayfindingEventChannel: EventChannel
     private lateinit var mapEventChannel: EventChannel
 
-    private lateinit var context: Context
+    private var context: Context? = null
     private var iaLocationManager: IALocationManager? = null
 
     @Volatile private var locationSink: EventChannel.EventSink? = null
@@ -40,37 +41,60 @@ class J4ckIndooratlasPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     @Volatile private var orientationSink: EventChannel.EventSink? = null
     @Volatile private var wayfindingSink: EventChannel.EventSink? = null
     @Volatile private var mapSink: EventChannel.EventSink? = null
-    @Volatile private var lastFloorPlan: Map<String, Any?>? = null
-    @Volatile private var currentFloorPlan: IAFloorPlan? = null
+
+    private var currentFloorPlanRef: IAFloorPlan? = null
+    @Volatile private var lastFloorPlanMap: Map<String, Any?>? = null
 
     private val locationListener: IALocationListener = object : IALocationListener {
         override fun onLocationChanged(location: IALocation) {
-            val floorPlan = currentFloorPlan
-            var pixelX: Double? = null
-            var pixelY: Double? = null
-
-            if (floorPlan != null) {
-                val point = floorPlan.coordinateToPoint(IALatLng(location.latitude, location.longitude))
-                point?.let {
-                    pixelX = it.x.toDouble()
-                    pixelY = it.y.toDouble()
-                }
-            }
-
-            val payload: Map<String, Any?> = mapOf(
+            val payload: MutableMap<String, Any?> = mutableMapOf(
                 "latitude" to location.latitude,
                 "longitude" to location.longitude,
                 "floorLevel" to location.floorLevel,
                 "accuracy" to location.accuracy,
                 "bearing" to location.bearing,
-                "time" to location.time,
-                "pixelX" to pixelX,
-                "pixelY" to pixelY
+                "time" to location.time
             )
+
+            try {
+                val fp = currentFloorPlanRef ?: location.region?.floorPlan
+                if (fp != null) {
+                    try {
+                        val point: PointF = fp.coordinateToPoint(location.latLngFloor)
+                        payload["pix_x"] = point.x.toDouble()
+                        payload["pix_y"] = point.y.toDouble()
+                    } catch (_: Throwable) {
+                        try {
+                            val mat = fp.affineWgs2pix
+                            if (mat != null) {
+                                val vals = FloatArray(9)
+                                mat.getValues(vals)
+                                val a = vals[0].toDouble()
+                                val b = vals[1].toDouble()
+                                val c = vals[2].toDouble()
+                                val d = vals[3].toDouble()
+                                val e = vals[4].toDouble()
+                                val f = vals[5].toDouble()
+                                val x = location.latitude * a + location.longitude * b + c
+                                val y = location.latitude * d + location.longitude * e + f
+                                payload["pix_x"] = x
+                                payload["pix_y"] = y
+                            }
+                        } catch (_: Throwable) {
+                            // ignore
+                        }
+                    }
+                }
+            } catch (_: Throwable) {
+                // NOT BLOCKS IF FAILS
+            }
+
             locationSink?.success(payload)
         }
 
-        override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {}
+        override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {
+            // OPTIONAL
+        }
     }
 
     private val regionListener: IARegion.Listener = object : IARegion.Listener {
@@ -81,10 +105,12 @@ class J4ckIndooratlasPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 "regionId" to region.id,
                 "regionName" to region.name
             )
+
             region.floorPlan?.let { fp ->
                 val fpMap = floorPlanToMap(fp)
                 payload["floorPlan"] = fpMap
-                lastFloorPlan = fpMap
+                lastFloorPlanMap = fpMap
+                currentFloorPlanRef = fp
                 mapSink?.success(fpMap)
             }
             geofenceSink?.success(payload)
@@ -97,6 +123,12 @@ class J4ckIndooratlasPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 "regionId" to region.id,
                 "regionName" to region.name
             )
+
+            if (region.floorPlan != null && currentFloorPlanRef?.id == region.floorPlan.id) {
+                currentFloorPlanRef = null
+                lastFloorPlanMap = null
+            }
+
             geofenceSink?.success(payload)
         }
     }
@@ -219,6 +251,7 @@ class J4ckIndooratlasPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         wayfindingSink?.success(mapOf("legs" to legsList, "points" to points))
     }
 
+    // ---------- Plugin lifecycle ----------
 
     override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         context = binding.applicationContext
@@ -250,20 +283,23 @@ class J4ckIndooratlasPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                     val req = IAGeofenceRequest.Builder()
                         .withCloudGeofences(true)
                         .build()
-                    mgr.addGeofences(req, geofenceListener, Looper.getMainLooper())
+                    try {
+                        mgr.addGeofences(req, geofenceListener, Looper.getMainLooper())
+                    } catch (_: Throwable) {}
                     mgr.registerRegionListener(regionListener)
                 }
             }
             override fun onCancel(arguments: Any?) {
                 geofenceSink = null
-                iaLocationManager?.removeGeofenceUpdates(geofenceListener)
-                iaLocationManager?.unregisterRegionListener(regionListener)
+                try { iaLocationManager?.removeGeofenceUpdates(geofenceListener) } catch (_: Throwable) {}
+                try { iaLocationManager?.unregisterRegionListener(regionListener) } catch (_: Throwable) {}
             }
         })
 
         mapEventChannel.setStreamHandler(object : EventChannel.StreamHandler {
             override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
                 mapSink = events
+                lastFloorPlanMap?.let { mapSink?.success(it) }
             }
             override fun onCancel(arguments: Any?) {
                 mapSink = null
@@ -291,6 +327,18 @@ class J4ckIndooratlasPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             }
         })
     }
+
+    override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
+        methodChannel.setMethodCallHandler(null)
+        locationEventChannel.setStreamHandler(null)
+        geofenceEventChannel.setStreamHandler(null)
+        orientationEventChannel.setStreamHandler(null)
+        wayfindingEventChannel.setStreamHandler(null)
+        mapEventChannel.setStreamHandler(null)
+        dispose()
+    }
+
+    // ---------- Method calls ----------
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
         when (call.method) {
@@ -327,7 +375,7 @@ class J4ckIndooratlasPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 result.success(mapOf("status" to "wayfinding_stopped"))
             }
             "getCurrentFloorPlan" -> {
-                result.success(lastFloorPlan)
+                result.success(lastFloorPlanMap)
             }
             "dispose" -> {
                 dispose()
@@ -338,11 +386,15 @@ class J4ckIndooratlasPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     }
 
     private fun initialize(apiKey: String) {
-        val extras = Bundle(1).apply {
+        val extras = Bundle(2).apply {
             putString(IALocationManager.EXTRA_API_KEY, apiKey)
+            putString(IALocationManager.EXTRA_API_SECRET, "not-used-in-plugin")
         }
-        iaLocationManager = IALocationManager.create(context, extras)
-        iaLocationManager?.lockIndoors(true)
+        context?.let { ctx ->
+            iaLocationManager = IALocationManager.create(ctx, extras)
+            iaLocationManager?.lockIndoors(true)
+            iaLocationManager?.registerRegionListener(regionListener)
+        }
     }
 
     private fun startLocation() {
@@ -377,15 +429,7 @@ class J4ckIndooratlasPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         orientationSink = null
         wayfindingSink = null
         mapSink = null
-    }
-
-    override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
-        methodChannel.setMethodCallHandler(null)
-        locationEventChannel.setStreamHandler(null)
-        geofenceEventChannel.setStreamHandler(null)
-        orientationEventChannel.setStreamHandler(null)
-        wayfindingEventChannel.setStreamHandler(null)
-        mapEventChannel.setStreamHandler(null)
-        dispose()
+        lastFloorPlanMap = null
+        currentFloorPlanRef = null
     }
 }

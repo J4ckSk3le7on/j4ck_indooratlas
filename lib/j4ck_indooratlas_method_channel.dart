@@ -72,12 +72,13 @@ class MethodChannelJ4ckIndooratlas extends J4ckIndooratlasPlatform {
   }
 
   static Map<String, dynamic> _normalize(dynamic event) {
-    if (event == null) return <String, dynamic>{};
+    if (event == null) return {};
     if (event is Map) {
-      return Map<String, dynamic>.from(event.map((key, value) =>
-          MapEntry(key.toString(), value)));
+      return Map<String, dynamic>.from(event.map(
+        (key, value) => MapEntry(key.toString(), value),
+      ));
     }
-    return {'value': event.toString()};
+    return {"value": event.toString()};
   }
 
   @override

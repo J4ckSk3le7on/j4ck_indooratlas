@@ -55,44 +55,32 @@ class J4ckIndooratlas {
       return null;
     });
 
-  Stream<List<Map<String, dynamic>>> get wayfindingPointsStream =>
+  Stream<List<Map<String, double>>> get wayfindingPointsStream =>
       wayfindingStream.map((evt) {
-        try {
-          final points = evt['points'];
-          if (points is List) {
-            return points.map<Map<String, dynamic>>((p) {
-              if (p is Map) return Map<String, dynamic>.from(p);
-              return <String, dynamic>{};
-            }).toList();
-          }
-          final legs = evt['legs'];
-          if (legs is List) {
-            final List<Map<String, dynamic>> out = [];
-            for (final l in legs) {
-              if (l is Map) {
-                final begin = l['begin'];
-                final end = l['end'];
-                if (begin is Map && begin['lat'] != null && begin['lon'] != null) {
-                  out.add({
-                    'lat': (begin['lat'] as num).toDouble(),
-                    'lon': (begin['lon'] as num).toDouble(),
-                  });
-                }
-                if (end is Map && end['lat'] != null && end['lon'] != null) {
-                  out.add({
-                    'lat': (end['lat'] as num).toDouble(),
-                    'lon': (end['lon'] as num).toDouble(),
-                  });
-                }
+        final legs = evt['legs'];
+        if (legs is List) {
+          final List<Map<String, double>> points = [];
+          for (final leg in legs) {
+            if (leg is Map) {
+              final begin = leg['begin'];
+              final end = leg['end'];
+              if (begin is Map && begin['lat'] != null && begin['lon'] != null) {
+                points.add({
+                  "lat": (begin['lat'] as num).toDouble(),
+                  "lon": (begin['lon'] as num).toDouble(),
+                });
+              }
+              if (end is Map && end['lat'] != null && end['lon'] != null) {
+                points.add({
+                  "lat": (end['lat'] as num).toDouble(),
+                  "lon": (end['lon'] as num).toDouble(),
+                });
               }
             }
-            return out;
           }
-
-        } catch (_) {
-          //Return empty list
+          return points;
         }
-        return <Map<String, dynamic>>[];
+        return <Map<String, double>>[];
       }).asBroadcastStream();
 
 }
