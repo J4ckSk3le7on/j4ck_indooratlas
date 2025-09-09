@@ -41,23 +41,36 @@ class J4ckIndooratlasPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     @Volatile private var wayfindingSink: EventChannel.EventSink? = null
     @Volatile private var mapSink: EventChannel.EventSink? = null
     @Volatile private var lastFloorPlan: Map<String, Any?>? = null
+    @Volatile private var currentFloorPlan: IAFloorPlan? = null
 
     private val locationListener: IALocationListener = object : IALocationListener {
         override fun onLocationChanged(location: IALocation) {
+            val floorPlan = currentFloorPlan
+            var pixelX: Double? = null
+            var pixelY: Double? = null
+
+            if (floorPlan != null) {
+                val point = floorPlan.coordinateToPoint(IALatLng(location.latitude, location.longitude))
+                point?.let {
+                    pixelX = it.x.toDouble()
+                    pixelY = it.y.toDouble()
+                }
+            }
+
             val payload: Map<String, Any?> = mapOf(
                 "latitude" to location.latitude,
                 "longitude" to location.longitude,
                 "floorLevel" to location.floorLevel,
                 "accuracy" to location.accuracy,
                 "bearing" to location.bearing,
-                "time" to location.time
+                "time" to location.time,
+                "pixelX" to pixelX,
+                "pixelY" to pixelY
             )
             locationSink?.success(payload)
         }
 
-        override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {
-            // Optional
-        }
+        override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {}
     }
 
     private val regionListener: IARegion.Listener = object : IARegion.Listener {

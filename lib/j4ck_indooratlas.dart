@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'j4ck_indooratlas_platform_interface.dart';
 
@@ -43,6 +44,16 @@ class J4ckIndooratlas {
   
   Future<Map<String, dynamic>?> getCurrentFloorPlan() =>
     _platform.getCurrentFloorPlan();
+  
+  Stream<Offset?> get pixelLocationStream =>
+    locationStream.map((evt) {
+      final x = evt['pixelX'];
+      final y = evt['pixelY'];
+      if (x is num && y is num) {
+        return Offset(x.toDouble(), y.toDouble());
+      }
+      return null;
+    });
 
   Stream<List<Map<String, dynamic>>> get wayfindingPointsStream =>
       wayfindingStream.map((evt) {
