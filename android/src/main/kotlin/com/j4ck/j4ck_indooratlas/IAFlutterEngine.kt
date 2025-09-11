@@ -1,4 +1,4 @@
-package com.indooratlas.flutter
+package com.j4ck.j4ck_indooratlas
 
 // Android imports
 import android.Manifest
@@ -554,7 +554,7 @@ class IAFlutterEngine(
             if (methodWithPI != null) {
                 try {
                     // Prepare action and PendingIntent
-                    val action = "com.indooratlas.flutter.WAYFINDING_UPDATE"
+                    val action = "com.j4ck.j4ck_indooratlas.WAYFINDING_UPDATE"
                     val intent = Intent(action)
                     // target only our app
                     intent.setPackage(_context.packageName)

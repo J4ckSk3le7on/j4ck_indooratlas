@@ -339,7 +339,7 @@ print('Trace ID: $traceId');
 ## Requirements
 
 - Flutter 3.35.2+
-- Dart 3.5+
+- Dart 3.9+
 - Android API level 24+
 - IndoorAtlas SDK 3.7.1
 

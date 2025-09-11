@@ -27,7 +27,7 @@ allprojects {
 }
 
 android {
-    namespace = "com.indooratlas.flutter"
+    namespace = "com.j4ck.j4ck_indooratlas"
 
     compileSdk = 36
 

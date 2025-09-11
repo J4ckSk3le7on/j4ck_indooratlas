@@ -6,7 +6,7 @@ import 'indooratlas.dart';
 
 // ----------------- MethodChannel bridge -----------------
 class IndoorAtlas {
-  static const MethodChannel _ch = MethodChannel('com.indooratlas.flutter');
+  static const MethodChannel _ch = MethodChannel('com.j4ck.j4ck_indooratlas');
   static bool debugEnabled = false;
 
   // internal state

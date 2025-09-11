@@ -5,7 +5,7 @@ description: "Demonstrates how to use the j4ck_indooratlas plugin."
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 
 environment:
-  sdk: ^3.5.0
+  sdk: ^3.9.0
   flutter: '>=3.35.2'
 
 # Dependencies specify other packages that your package needs in order to work.

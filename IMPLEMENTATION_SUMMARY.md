@@ -9,6 +9,7 @@
 
 ### 2. Dependencies Updated
 - **Flutter**: Updated to 3.35.2 (latest stable)
+- **Dart**: Updated to 3.9.0 (latest stable)
 - **Kotlin**: Updated to 2.2.20 (latest stable)
 - **IndoorAtlas SDK**: Updated to 3.7.1 (latest version)
 - **Android Gradle Plugin**: Updated to 8.13.0
@@ -161,6 +162,7 @@ IndoorAtlasListener(
 - ✅ Android API 24+ (Android 7.0+)
 - ✅ Kotlin 2.2.20
 - ✅ Flutter 3.35.2
+- ✅ Dart 3.9.0
 - ✅ Gradle 8.13.0
 
 ## 📚 Documentation

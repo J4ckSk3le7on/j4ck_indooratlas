@@ -1,4 +1,4 @@
-package com.indooratlas.flutter
+package com.j4ck.j4ck_indooratlas
 
 import androidx.annotation.NonNull
 import io.flutter.embedding.engine.plugins.FlutterPlugin
@@ -32,13 +32,13 @@ import com.indooratlas.android.sdk.resources.IALatLng
 import com.indooratlas.android.sdk.resources.IAVenue
 
 
-class IAFlutterPlugin: FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware, PluginRegistry.RequestPermissionsResultListener {
+class J4ckIndooratlasPlugin: FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware, PluginRegistry.RequestPermissionsResultListener {
     private lateinit var _engineImpl: IAFlutterEngine
     private lateinit var _channel: MethodChannel
     private var _activityBinding: ActivityPluginBinding? = null
 
     override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
-        _channel = MethodChannel(flutterPluginBinding.binaryMessenger, "com.indooratlas.flutter")
+        _channel = MethodChannel(flutterPluginBinding.binaryMessenger, "com.j4ck.j4ck_indooratlas")
         _channel.setMethodCallHandler(this)
         _engineImpl = IAFlutterEngine(flutterPluginBinding.applicationContext, _channel)
     }
