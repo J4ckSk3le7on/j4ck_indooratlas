@@ -1,11 +1,11 @@
 name: j4ck_indooratlas
-description: "A new Flutter project."
-version: 0.0.1
-homepage:
+description: "IndoorAtlas Flutter plugin with wayfinding support"
+version: 1.0.0
+homepage: https://github.com/j4ck/j4ck_indooratlas
 
 environment:
   sdk: ^3.9.0
-  flutter: '>=3.3.0'
+  flutter: '>=3.35.2'
 
 dependencies:
   flutter:
