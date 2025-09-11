@@ -2,7 +2,7 @@ group = "com.j4ck.j4ck_indooratlas"
 version = "1.0-SNAPSHOT"
 
 buildscript {
-    ext.kotlin_version = "2.1.0"
+    ext.kotlin_version = "2.2.20"
     repositories {
         google()
         mavenCentral()
@@ -27,7 +27,7 @@ allprojects {
 }
 
 android {
-    namespace = "com.j4ck.j4ck_indooratlas"
+    namespace = "com.indooratlas.flutter"
 
     compileSdk = 36
 
