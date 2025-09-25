@@ -162,13 +162,13 @@ class IndoorAtlas {
     int j = polygon.length - 1;
 
     for (int i = 0; i < polygon.length; i++) {
-      final xi = polygon[i].latitude;
-      final yi = polygon[i].longitude;
-      final xj = polygon[j].latitude;
-      final yj = polygon[j].longitude;
+      final xi = polygon[i].longitude;  // longitude is x-coordinate (east-west)
+      final yi = polygon[i].latitude;   // latitude is y-coordinate (north-south)
+      final xj = polygon[j].longitude;  // longitude is x-coordinate (east-west)
+      final yj = polygon[j].latitude;   // latitude is y-coordinate (north-south)
 
-      if (((xi > point.latitude) != (xj > point.latitude)) &&
-          (point.longitude < (yj - yi) * (point.latitude - xi) / (xj - xi) + yi)) {
+      if (((yi > point.latitude) != (yj > point.latitude)) &&
+          (point.longitude < (xj - xi) * (point.latitude - yi) / (yj - yi) + xi)) {
         inside = !inside;
       }
       j = i;
