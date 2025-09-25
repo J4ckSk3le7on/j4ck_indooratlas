@@ -35,11 +35,9 @@ import com.indooratlas.android.sdk.resources.IAFloorPlan
 import com.indooratlas.android.sdk.resources.IALatLng
 import com.indooratlas.android.sdk.resources.IAVenue
 
-// Simple wrapper result (left for compatibility)
-open class IAFlutterResult
 
 // ---------- Mapping helpers ----------
-private fun IAPOI2Map(poi: IAPOI): Map<String, Any?> {
+private fun iapoi2Map(poi: IAPOI): Map<String, Any?> {
     return mapOf(
         "type" to "Feature",
         "id" to poi.id,
@@ -55,7 +53,7 @@ private fun IAPOI2Map(poi: IAPOI): Map<String, Any?> {
     )
 }
 
-private fun IAGeofence2Map(geofence: com.indooratlas.android.sdk.IAGeofence): Map<String, Any?> {
+private fun iaGeofence2Map(geofence: com.indooratlas.android.sdk.IAGeofence): Map<String, Any?> {
     val vertices = geofence.edges.flatMap { listOf(it[1], it[0]) }
     val coords = mutableListOf<List<Double>>()
     for (i in vertices.indices step 2) {
@@ -76,7 +74,7 @@ private fun IAGeofence2Map(geofence: com.indooratlas.android.sdk.IAGeofence): Ma
     )
 }
 
-private fun IAFloorplan2Map(floorplan: IAFloorPlan): Map<String, Any?> {
+private fun iaFloorplan2Map(floorplan: IAFloorPlan): Map<String, Any?> {
     return mapOf(
         "id" to floorplan.id,
         "name" to (floorplan.name ?: ""),
@@ -97,36 +95,36 @@ private fun IAFloorplan2Map(floorplan: IAFloorPlan): Map<String, Any?> {
     )
 }
 
-private fun IAVenue2Map(venue: IAVenue): Map<String, Any?> {
+private fun iaVenue2Map(venue: IAVenue): Map<String, Any?> {
     val map = mutableMapOf<String, Any?>(
         "id" to venue.id,
         "name" to venue.name
     )
-    val plans: List<Map<String, Any?>> = venue.floorPlans.map { IAFloorplan2Map(it) }
+    val plans: List<Map<String, Any?>> = venue.floorPlans.map { iaFloorplan2Map(it) }
     if (plans.isNotEmpty()) map["floorPlans"] = plans
-    val fences: List<Map<String, Any?>> = venue.geofences.map { IAGeofence2Map(it) }
+    val fences: List<Map<String, Any?>> = venue.geofences.map { iaGeofence2Map(it) }
     if (fences.isNotEmpty()) map["geofences"] = fences
-    val pois: List<Map<String, Any?>> = venue.poIs.map { IAPOI2Map(it) }
+    val pois: List<Map<String, Any?>> = venue.poIs.map { iapoi2Map(it) }
     if (pois.isNotEmpty()) map["pois"] = pois
     return map
 }
 
-private fun IARegion2Map(region: IARegion): Map<String, Any?> {
+private fun iaRegion2Map(region: IARegion): Map<String, Any?> {
     val map = mutableMapOf<String, Any?>(
         "regionId" to region.id,
         "timestamp" to region.timestamp,
         "regionType" to region.type
     )
     if (region.floorPlan != null) {
-        map["floorPlan"] = IAFloorplan2Map(region.floorPlan)
+        map["floorPlan"] = iaFloorplan2Map(region.floorPlan)
     }
     if (region.venue != null) {
-        map["venue"] = IAVenue2Map(region.venue)
+        map["venue"] = iaVenue2Map(region.venue)
     }
     return map
 }
 
-private fun IALocation2Map(location: IALocation): Map<String, Any?> {
+private fun iaLocation2Map(location: IALocation): Map<String, Any?> {
     val map = mutableMapOf<String, Any?>(
         "latitude" to location.latitude,
         "longitude" to location.longitude,
@@ -139,7 +137,7 @@ private fun IALocation2Map(location: IALocation): Map<String, Any?> {
         "timestamp" to location.time
     )
     if (location.region != null) {
-        map["region"] = IARegion2Map(location.region)
+        map["region"] = iaRegion2Map(location.region)
         val fp = location.region.floorPlan
         if (fp != null) {
             try {
@@ -154,7 +152,7 @@ private fun IALocation2Map(location: IALocation): Map<String, Any?> {
     return map
 }
 
-private fun IARoutePoint2Map(rp: IARoute.Point): Map<String, Any?> {
+private fun iaRoutePoint2Map(rp: IARoute.Point): Map<String, Any?> {
     return mapOf(
         "latitude" to rp.latitude,
         "longitude" to rp.longitude,
@@ -162,11 +160,11 @@ private fun IARoutePoint2Map(rp: IARoute.Point): Map<String, Any?> {
     )
 }
 
-private fun IARoute2Map(route: IARoute): Map<String, Any?> {
+private fun iaRoute2Map(route: IARoute): Map<String, Any?> {
     val legs: List<Map<String, Any?>> = route.legs.map { leg ->
         mapOf(
-            "begin" to IARoutePoint2Map(leg.begin),
-            "end" to IARoutePoint2Map(leg.end),
+            "begin" to iaRoutePoint2Map(leg.begin),
+            "end" to iaRoutePoint2Map(leg.end),
             "length" to leg.length,
             "direction" to leg.direction,
             "edgeIndex" to (leg.edgeIndex ?: -1)
@@ -191,8 +189,7 @@ class IAFlutterEngine(
     // activity binding (set from plugin)
     var activityBinding: ActivityPluginBinding? = null
         set(value) {
-            field?.removeRequestPermissionsResultListener(this)
-            value?.addRequestPermissionsResultListener(this)
+            // Listener management handled by plugin
             field = value
         }
 
@@ -228,7 +225,7 @@ class IAFlutterEngine(
     }.toTypedArray()
 
     // -------- IALocationListener --------
-    override fun onStatusChanged(@NonNull provider: String, status: Int, bundle: Bundle?) {
+    override fun onStatusChanged(provider: String, status: Int, bundle: Bundle?) {
         val mappedStatus = when (status) {
             IALocationManager.STATUS_OUT_OF_SERVICE -> 0
             IALocationManager.STATUS_TEMPORARILY_UNAVAILABLE -> 1
@@ -239,12 +236,12 @@ class IAFlutterEngine(
         _channel.invokeMethod("onStatusChanged", listOf(mappedStatus))
     }
 
-    override fun onLocationChanged(@NonNull location: IALocation) {
+    override fun onLocationChanged(location: IALocation) {
         _currentLocation = location
-        _channel.invokeMethod("onLocationChanged", listOf(IALocation2Map(location)))
+        _channel.invokeMethod("onLocationChanged", listOf(iaLocation2Map(location)))
 
         if (location.region != null && location.region.venue != null && location.region.venue.geofences.isNotEmpty()) {
-            val geofenceMaps = location.region.venue.geofences.map { IAGeofence2Map(it) }
+            val geofenceMaps = location.region.venue.geofences.map { iaGeofence2Map(it) }
             _currentGeofences.clear()
             _currentGeofences.addAll(geofenceMaps)
             _channel.invokeMethod("onGeofencesTriggered", listOf(
@@ -313,11 +310,11 @@ class IAFlutterEngine(
     }
 
     // IARegion.Listener methods
-    override fun onEnterRegion(@NonNull region: IARegion) {
-        _channel.invokeMethod("onEnterRegion", listOf(IARegion2Map(region)))
+    override fun onEnterRegion(region: IARegion) {
+        _channel.invokeMethod("onEnterRegion", listOf(iaRegion2Map(region)))
 
         if (region.venue != null && region.venue.geofences.isNotEmpty()) {
-            val geofenceMaps = region.venue.geofences.map { IAGeofence2Map(it) }
+            val geofenceMaps = region.venue.geofences.map { iaGeofence2Map(it) }
             _currentGeofences.clear()
             _currentGeofences.addAll(geofenceMaps)
             _channel.invokeMethod("onGeofencesTriggered", listOf(
@@ -331,8 +328,8 @@ class IAFlutterEngine(
         }
     }
 
-    override fun onExitRegion(@NonNull region: IARegion) {
-        _channel.invokeMethod("onExitRegion", listOf(IARegion2Map(region)))
+    override fun onExitRegion(region: IARegion) {
+        _channel.invokeMethod("onExitRegion", listOf(iaRegion2Map(region)))
 
         _currentGeofences.clear()
         _channel.invokeMethod("onGeofencesTriggered", listOf(
@@ -346,7 +343,7 @@ class IAFlutterEngine(
         _currentTriggeredGeofenceIds.clear()
     }
 
-    override fun onOrientationChange(timestamp: Long, @NonNull quaternion: DoubleArray) {
+    override fun onOrientationChange(timestamp: Long, quaternion: DoubleArray) {
         _channel.invokeMethod(
             "onOrientationChanged",
             listOf(timestamp, quaternion[0], quaternion[1], quaternion[2], quaternion[3])
@@ -392,7 +389,7 @@ class IAFlutterEngine(
         binding.activity.requestPermissions(PERMISSIONS, PERMISSION_REQUEST_CODE)
     }
 
-    fun initialize(@NonNull pluginVersion: String, @NonNull apiKey: String, @NonNull endpoint: String) {
+    fun initialize(pluginVersion: String, apiKey: String, endpoint: String) {
         _handler.post {
             val bundle = Bundle(2)
             bundle.putString(IALocationManager.EXTRA_API_KEY, apiKey)
@@ -408,7 +405,7 @@ class IAFlutterEngine(
     }
 
     fun getTraceId(): String {
-        return _locationManager?.getExtraInfo()?.traceId ?: ""
+        return _locationManager?.extraInfo?.traceId ?: ""
     }
 
     fun lockIndoors(locked: Boolean) {
@@ -430,14 +427,14 @@ class IAFlutterEngine(
             2 -> IALocationRequest.PRIORITY_CART_MODE
             else -> IALocationRequest.PRIORITY_HIGH_ACCURACY
         }
-        _locationRequest.setPriority(prio)
+                    _locationRequest.priority = prio
     }
 
     fun setOutputThresholds(distance: Double?, interval: Double?) {
         val wasRunning = _locationServiceRunning
         if (wasRunning) stopPositioning()
-        if (distance != null && distance >= 0) _locationRequest.setSmallestDisplacement(distance.toFloat())
-        if (interval != null && interval >= 0) _locationRequest.setFastestInterval((interval * 1000).toLong())
+        if (distance != null && distance >= 0) _locationRequest.smallestDisplacement = distance.toFloat()
+        if (interval != null && interval >= 0) _locationRequest.fastestInterval = (interval * 1000).toLong()
         if (wasRunning) startPositioning()
     }
 
@@ -517,7 +514,7 @@ class IAFlutterEngine(
             val listener = object : com.indooratlas.android.sdk.IAWayfindingListener {
                 override fun onWayfindingUpdate(route: com.indooratlas.android.sdk.IARoute) {
                     try {
-                        _channel.invokeMethod("onWayfindingUpdate", listOf(IARoute2Map(route)))
+                                    _channel.invokeMethod("onWayfindingUpdate", listOf(iaRoute2Map(route)))
                     } catch (e: Exception) {
                         Log.e("IAFlutterEngine", "Error invoking onWayfindingUpdate", e)
                     }
@@ -578,9 +575,14 @@ class IAFlutterEngine(
                             try {
                                 if (intent == null) return
                                 // Attempt 1: SDK might put an IARoute as a Parcelable under "route"
-                                val parcelRoute = intent.getParcelableExtra<com.indooratlas.android.sdk.IARoute>("route")
+                                val parcelRoute = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                    intent.getParcelableExtra("route", com.indooratlas.android.sdk.IARoute::class.java)
+                                } else {
+                                    @Suppress("DEPRECATION")
+                                    intent.getParcelableExtra<com.indooratlas.android.sdk.IARoute>("route")
+                                }
                                 if (parcelRoute != null) {
-                                    _channel.invokeMethod("onWayfindingUpdate", listOf(IARoute2Map(parcelRoute)))
+                                    _channel.invokeMethod("onWayfindingUpdate", listOf(iaRoute2Map(parcelRoute)))
                                     return
                                 }
                                 // Attempt 2: check extras for any IARoute or serializable object
@@ -589,7 +591,7 @@ class IAFlutterEngine(
                                     for (key in extras.keySet()) {
                                         val extra = extras.get(key)
                                         if (extra is com.indooratlas.android.sdk.IARoute) {
-                                            _channel.invokeMethod("onWayfindingUpdate", listOf(IARoute2Map(extra)))
+                                            _channel.invokeMethod("onWayfindingUpdate", listOf(iaRoute2Map(extra)))
                                             return
                                         }
                                     }

@@ -7,29 +7,6 @@ import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.PluginRegistry
-import android.Manifest
-import android.content.Context
-import android.os.Build
-import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
-import android.util.Log
-
-// Importaciones de IndoorAtlas
-import com.indooratlas.android.sdk.IALocation
-import com.indooratlas.android.sdk.IALocationRequest
-import com.indooratlas.android.sdk.IAOrientationRequest
-import com.indooratlas.android.sdk.IALocationListener
-import com.indooratlas.android.sdk.IALocationManager
-import com.indooratlas.android.sdk.IARegion
-import com.indooratlas.android.sdk.IARoute
-import com.indooratlas.android.sdk.IAOrientationListener
-import com.indooratlas.android.sdk.IAGeofenceListener
-import com.indooratlas.android.sdk.IAGeofenceEvent
-import com.indooratlas.android.sdk.IAPOI
-import com.indooratlas.android.sdk.resources.IAFloorPlan
-import com.indooratlas.android.sdk.resources.IALatLng
-import com.indooratlas.android.sdk.resources.IAVenue
 
 
 class J4ckIndooratlasPlugin: FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware, PluginRegistry.RequestPermissionsResultListener {
@@ -37,13 +14,13 @@ class J4ckIndooratlasPlugin: FlutterPlugin, MethodChannel.MethodCallHandler, Act
     private lateinit var _channel: MethodChannel
     private var _activityBinding: ActivityPluginBinding? = null
 
-    override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
+    override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         _channel = MethodChannel(flutterPluginBinding.binaryMessenger, "com.j4ck.j4ck_indooratlas")
         _channel.setMethodCallHandler(this)
         _engineImpl = IAFlutterEngine(flutterPluginBinding.applicationContext, _channel)
     }
 
-    override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
+    override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         _channel.setMethodCallHandler(null)
         _engineImpl.detach()
     }
@@ -76,7 +53,7 @@ class J4ckIndooratlasPlugin: FlutterPlugin, MethodChannel.MethodCallHandler, Act
         return _engineImpl.onRequestPermissionsResult(requestCode, permissions, grantResults)
     }
 
-    override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: MethodChannel.Result) {
+    override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
         try {
             when (call.method) {
                 "initialize" -> {
